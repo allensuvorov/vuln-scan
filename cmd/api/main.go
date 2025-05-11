@@ -1,20 +1,21 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/allensuvorov/vuln-scan-query/internal/api"
 )
 
 func main() {
-	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "OK")
-	})
+	mux := http.NewServeMux()
 
-	log.Print("starting server on :8080")
+	handler := api.NewHandler()
 
-	err := http.ListenAndServe(":8080", nil)
+	mux.HandleFunc("POST /scan", handler.ScanHandler)
+	mux.HandleFunc("POST /query", handler.QueryHandler)
+
+	log.Println("Server starting on :8080")
+	err := http.ListenAndServe(":8080", mux)
 	log.Fatal(err)
 }
-
-// This is a simple HTTP server that responds to health check requests.
