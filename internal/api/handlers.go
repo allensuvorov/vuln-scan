@@ -1,29 +1,57 @@
 package api
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
+
+	"github.com/allensuvorov/vuln-scan-query/internal/domain/entity"
 )
 
-// Handler holds the dependencies for the HTTP layer.
-// We'll inject the service layer later.
+// Service is the business logic interface
+type Service interface {
+	Scan(ctx context.Context, req entity.ScanRequest) error
+	Query(ctx context.Context, req entity.QueryRequest) ([]entity.Vulnerability, error)
+}
+
 type Handler struct {
-	// Service will be added here later
+	svc Service
 }
 
-// NewHandler returns a new Handler instance.
-// Useful for wiring everything together in main.go.
-func NewHandler() *Handler {
-	return &Handler{}
+func NewHandler(svc Service) *Handler {
+	return &Handler{svc: svc}
 }
 
-// POST /scan
 func (h *Handler) ScanHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("scan endpoint not implemented yet"))
+	var req entity.ScanRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	err := h.svc.Scan(r.Context(), req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+	w.Write([]byte("Scan started"))
 }
 
-// POST /query
 func (h *Handler) QueryHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("query endpoint not implemented yet"))
+	var req entity.QueryRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	results, err := h.svc.Query(r.Context(), req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
 }
