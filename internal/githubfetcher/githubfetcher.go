@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -79,6 +80,11 @@ func (g *GitHubFetcher) FetchFiles(ctx context.Context, repo string, files []str
 
 		// Store the decoded content in the result map.
 		result[file] = decoded
+	}
+
+	// Log for testing
+	for k, v := range result {
+		log.Print(k, string(v))
 	}
 
 	return result, nil
