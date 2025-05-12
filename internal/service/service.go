@@ -23,7 +23,7 @@ type Service struct {
 	storage Storage
 }
 
-func NewService(fetcher GitHubFetcher, storage Storage) *Service {
+func New(fetcher GitHubFetcher, storage Storage) *Service {
 	return &Service{
 		fetcher: fetcher,
 		storage: storage,

@@ -10,8 +10,8 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
-	service := service.NewService()
-	handler := api.NewHandler(service)
+	service := service.New()
+	handler := api.New(service)
 
 	mux.HandleFunc("POST /scan", handler.ScanHandler)
 	mux.HandleFunc("POST /query", handler.QueryHandler)
