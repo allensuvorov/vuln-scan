@@ -5,12 +5,13 @@ import (
 	"net/http"
 
 	"github.com/allensuvorov/vuln-scan-query/internal/api"
+	"github.com/allensuvorov/vuln-scan-query/internal/service"
 )
 
 func main() {
 	mux := http.NewServeMux()
-
-	handler := api.NewHandler()
+	service := service.NewService()
+	handler := api.NewHandler(service)
 
 	mux.HandleFunc("POST /scan", handler.ScanHandler)
 	mux.HandleFunc("POST /query", handler.QueryHandler)
