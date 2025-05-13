@@ -20,16 +20,13 @@ func main() {
 	// Create instances of GitHubFetcher and DummyStorage.
 	fetcher := githubfetcher.New(httpClient)
 
-	// dummyStorage := storage.NewDummyStorage()
-
 	sqliteStorage, err := storage.NewSQLiteStorage("vulns.db")
 	if err != nil {
 		log.Fatalf("failed to init storage: %v", err)
 	}
 
+	// Create the default service with the fetcher and sqlite storage.
 	svc := service.New(fetcher, sqliteStorage)
-	// Create the default service with the fetcher and storage.
-	// svc := service.New(fetcher, dummyStorage)
 
 	// Initialize the API handler with the service.
 	handler := api.New(svc)
