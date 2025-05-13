@@ -14,7 +14,7 @@
     RUN go build -o vuln-scan-query ./cmd/api
     
     # -------- Stage 2: Runtime image with libsqlite3 --------
-    FROM debian:bookworm-slim
+    FROM debian:stable-slim
     
     # Install libsqlite3 runtime
     RUN apt-get update && apt-get install -y libsqlite3-0 ca-certificates && rm -rf /var/lib/apt/lists/*
