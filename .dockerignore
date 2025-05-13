@@ -1,0 +1,26 @@
+# Go build outputs
+*.exe
+*.out
+*.test
+
+# Dependency folders
+vendor/
+
+# VCS and IDE stuff
+.git
+.gitignore
+.vscode/
+.idea/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# SQLite database
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+
+# Logs
+*.log
