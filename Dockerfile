@@ -1,5 +1,5 @@
 # Stage 1: Build the Go application
-FROM golang:1.21 AS builder
+FROM golang:1.24-bookworm AS builder
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -17,7 +17,7 @@ COPY . .
 RUN go build -o vuln-scan-query ./cmd/vulnscanquery
 
 # Stage 2: Create a minimal runtime image
-FROM debian:bullseye-slim
+FROM debian:stable-slim
 
 # Set the working directory inside the container
 WORKDIR /app
