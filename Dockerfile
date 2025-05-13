@@ -1,28 +1,26 @@
 # -------- Stage 1: Build the Go application --------
-FROM golang:1.24-bookworm AS builder
+    FROM golang:1.24.3-bookworm AS builder
 
-    # Set the working directory inside the builder container
-    WORKDIR /app
+    # Install SQLite dev headers for CGO build
+    RUN apt-get update && apt-get install -y libsqlite3-dev
     
-    # Copy dependency files and download dependencies
+    WORKDIR /app
     COPY go.mod go.sum ./
     RUN go mod download
-    
-    # Copy the rest of the source code
     COPY . .
     
-    # Build the Go application (disable CGO for static binary)
-    RUN CGO_ENABLED=0 GOOS=linux go build -o vuln-scan-query ./cmd/vulnscanquery
+    # Enable CGO (needed by go-sqlite3)
+    ENV CGO_ENABLED=1
+    RUN go build -o vuln-scan-query ./cmd/api
     
-    # -------- Stage 2: Create a minimal runtime image --------
-    FROM gcr.io/distroless/static:nonroot
+    # -------- Stage 2: Runtime image with libsqlite3 --------
+    FROM debian:bookworm-slim
     
-    # Copy the compiled binary from the builder stage
-    COPY --from=builder /app/vuln-scan-query /
+    # Install libsqlite3 runtime
+    RUN apt-get update && apt-get install -y libsqlite3-0 ca-certificates && rm -rf /var/lib/apt/lists/*
     
-    # Expose the HTTP port (adjust if needed)
+    WORKDIR /app
+    COPY --from=builder /app/vuln-scan-query .
+    
     EXPOSE 8080
-    
-    # Run the binary as non-root user (UID 65532 is 'nonroot')
-    USER nonroot:nonroot
-    ENTRYPOINT ["/vuln-scan-query"]
+    CMD ["./vuln-scan-query"]
