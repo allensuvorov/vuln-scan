@@ -30,4 +30,5 @@ go.work.sum
 # SQLite database
 *.db
 
+# VS Code's Go debugger (Delve)
 __debug_bin*
