@@ -38,7 +38,7 @@ func NewSQLiteStorage(dsn string) (*SQLiteStorage, error) {
 func applySchema(db *sql.DB) error {
 	schema := `
     CREATE TABLE IF NOT EXISTS vulnerabilities (
-        id TEXT,
+        id TEXT PRIMARY KEY,
         severity TEXT,
         cvss REAL,
         status TEXT,
@@ -66,14 +66,16 @@ func (s *SQLiteStorage) SaveVulnerabilities(ctx context.Context, vulns []entity.
 	}
 
 	// Prepare the insert statement
+
 	stmt, err := tx.PrepareContext(ctx, `
-        INSERT INTO vulnerabilities (
-            id, severity, cvss, status,
-            package_name, current_version, fixed_version,
-            description, published_date, link, risk_factors,
-            source_file, scan_time
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `)
+    INSERT OR IGNORE INTO vulnerabilities (
+        id, severity, cvss, status,
+        package_name, current_version, fixed_version,
+        description, published_date, link, risk_factors,
+        source_file, scan_time
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`)
+
 	if err != nil {
 		tx.Rollback()
 		return fmt.Errorf("prepare stmt: %w", err)
