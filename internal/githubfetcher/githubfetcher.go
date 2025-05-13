@@ -81,10 +81,5 @@ func (g *GitHubFetcher) FetchFiles(ctx context.Context, repo string, files []str
 		result[file] = decoded
 	}
 
-	// Log for testing
-	// for k, v := range result {
-	// 	log.Print(k, string(v))
-	// }
-
 	return result, nil
 }
