@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/allensuvorov/vuln-scan-query/internal/domain/entity"
@@ -35,26 +36,64 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 		return errors.New("repo and files must be provided")
 	}
 
-	// Fetch .json files
-	fileData, err := s.fetcher.FetchFiles(ctx, req.Repo, req.Files)
-	if err != nil {
-		return fmt.Errorf("fetch failed: %w", err)
+	const workerCount = 3 // Fetch concurrency limit
+
+	var (
+		wg     sync.WaitGroup
+		mu     sync.Mutex
+		parsed []entity.Vulnerability
+		jobs   = make(chan string)
+	)
+
+	// Start worker pool
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+			for file := range jobs {
+				// Fetch
+				filesData, err := s.fetcher.FetchFiles(ctx, req.Repo, []string{file})
+				if err != nil {
+					fmt.Printf("⚠️  Worker %d: Failed to fetch %s: %v\n", workerID, file, err)
+					continue
+				}
+
+				data := filesData[file]
+				if len(data) == 0 {
+					fmt.Printf("⚠️  Worker %d: No data in file %s\n", workerID, file)
+					continue
+				}
+
+				// Parse
+				vulns, err := ParseVulnerabilities(data, file, time.Now())
+				if err != nil {
+					fmt.Printf("⚠️  Worker %d: Failed to parse %s: %v\n", workerID, file, err)
+					continue
+				}
+
+				// Add to shared slice
+				mu.Lock()
+				parsed = append(parsed, vulns...)
+				mu.Unlock()
+			}
+		}(i + 1)
 	}
 
-	// Parse each file
-	var allVulns []entity.Vulnerability
-	now := time.Now()
+	// Send jobs to workers
+	for _, file := range req.Files {
+		jobs <- file
+	}
+	close(jobs)
 
-	for fileName, data := range fileData {
-		vulns, err := ParseVulnerabilities(data, fileName, now)
-		if err != nil {
-			return fmt.Errorf("parse failed for %s: %w", fileName, err)
-		}
-		allVulns = append(allVulns, vulns...)
+	// Wait for all workers to finish
+	wg.Wait()
+
+	// Batch write to DB
+	if err := s.storage.SaveVulnerabilities(ctx, parsed); err != nil {
+		return fmt.Errorf("saving vulnerabilities: %w", err)
 	}
 
-	// Save all to storage
-	return s.storage.SaveVulnerabilities(ctx, allVulns)
+	return nil
 }
 
 func (s *Service) Query(ctx context.Context, req entity.QueryRequest) ([]entity.Vulnerability, error) {
