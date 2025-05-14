@@ -17,9 +17,10 @@ func main() {
 		Timeout: 10 * time.Second,
 	}
 
-	// Create instances of GitHubFetcher and DummyStorage.
+	// Create instances of GitHubFetcher.
 	fetcher := githubfetcher.New(httpClient)
 
+	// Create instances of SQLiteStorage.
 	sqliteStorage, err := storage.NewSQLiteStorage("vulns.db")
 	if err != nil {
 		log.Fatalf("failed to init storage: %v", err)
