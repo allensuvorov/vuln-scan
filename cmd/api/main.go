@@ -26,7 +26,7 @@ func main() {
 		log.Fatalf("failed to init storage: %v", err)
 	}
 
-	// Create the default service with the fetcher and sqlite storage.
+	// Create instances of Service with the fetcher and sqliteStorage.
 	svc := service.New(fetcher, sqliteStorage)
 
 	// Initialize the API handler with the service.
