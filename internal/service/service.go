@@ -42,7 +42,7 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 		wg     sync.WaitGroup
 		mu     sync.Mutex
 		parsed []entity.Vulnerability
-		jobs   = make(chan string)
+		jobs   = make(chan string, 10) // add buffer, so that jobs can be queued for the workers
 	)
 
 	// Start worker pool
