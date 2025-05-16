@@ -72,6 +72,8 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 				}
 
 				// Add to shared slice
+				// TODO - streamline vulns bundling with a channel and a budler
+				// to avoid blocking
 				mu.Lock()
 				parsed = append(parsed, vulns...)
 				mu.Unlock()
