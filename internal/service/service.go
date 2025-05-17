@@ -77,6 +77,22 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 				mu.Lock()
 				parsed = append(parsed, vulns...)
 				mu.Unlock()
+				//  []vulns ->
+				//  []vulns -> []vulns ->
+				//  []vulns ->
+				//  []vulns -> 				\
+				//  []vulns -> []vulns ->   - DB
+				//  []vulns -> 				/
+				//  []vulns ->
+				//  []vulns -> []vulns ->
+				//  []vulns ->
+
+				// here is what we are trying to do at this point:
+
+				//  [-----]vulns ->
+				//  [-]vulns -> 	 ->ch -> (bundlers workers) []vulns ->
+				//  [-]vulns ->
+
 			}
 		}(i + 1)
 	}
