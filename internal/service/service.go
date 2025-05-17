@@ -93,6 +93,7 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 				//  [-]vulns -> 	 ->ch -> (bundlers workers) []vulns ->
 				//  [-]vulns ->
 
+				// Idea 1: if we know size of the bundle, we can write to array elements safely by index
 			}
 		}(i + 1)
 	}
