@@ -40,3 +40,23 @@ To run unit tests (requires Go ≥ 1.24.3):
 
 ```bash
 go test ./internal/... -cover
+```
+
+### ✅ Manual Tests
+
+To test `/scan` endpoint:
+```bash
+curl -X POST http://localhost:8080/scan \
+  -H "Content-Type: application/json" \
+  -d '{
+    "repo": "velancio/vulnerability_scans",
+    "files": ["vulnscan1011.json", "vulnscan1213.json", "vulnscan15.json", "abc.json"]
+  }'
+```
+
+To test `/query` endpoint:
+```bash
+curl -X POST http://localhost:8080/query \
+  -H "Content-Type: application/json" \
+  -d '{"filters": {"severity": "CRITICAL"}}'
+```
