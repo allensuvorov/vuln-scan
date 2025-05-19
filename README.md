@@ -42,9 +42,22 @@ To run unit tests (requires Go ≥ 1.24.3):
 go test ./internal/... -cover
 ```
 
-### ✅ Manual Tests
+### ✅ Manual Testing (via Docker)
 
-To test `/scan` endpoint:
+1. Build the Docker image:
+
+```bash
+docker build -t vuln-scan-query .
+```
+
+2. Run the container:
+
+```bash
+docker run --rm -p 8080:8080 vuln-scan-query
+```
+
+3. Send a scan request:
+   
 ```bash
 curl -X POST http://localhost:8080/scan \
   -H "Content-Type: application/json" \
@@ -54,7 +67,8 @@ curl -X POST http://localhost:8080/scan \
   }'
 ```
 
-To test `/query` endpoint:
+4. Query stored results:
+
 ```bash
 curl -X POST http://localhost:8080/query \
   -H "Content-Type: application/json" \
