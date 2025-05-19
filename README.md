@@ -74,3 +74,30 @@ curl -X POST http://localhost:8080/query \
   -H "Content-Type: application/json" \
   -d '{"filters": {"severity": "CRITICAL"}}'
 ```
+
+---
+
+## 🛠 Tech Stack
+	•	Go 1.24.x
+	•	SQLite (go-sqlite3 with CGO)
+	•	Docker (multi-stage)
+	•	No external dependencies
+
+---
+
+## 🧹 Cleanup (Optional)
+
+The SQLite DB file (vulns.db) is created inside the container and discarded on --rm. For persistence, you can mount a Docker volume.
+
+---
+
+## 📁 Project Structure
+
+```
+cmd/api/          # Entry point (main.go)
+internal/api/     # HTTP handlers
+internal/service/ # Business logic
+internal/storage/ # SQLite storage
+internal/githubfetcher/ # GitHub file fetcher
+internal/domain/entity/ # Shared types
+```
