@@ -39,10 +39,10 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 	const workerCount = 3 // Fetch concurrency limit
 
 	var (
-		wg     sync.WaitGroup
-		mu     sync.Mutex
-		parsed []entity.Vulnerability
-		jobs   = make(chan string, 10) // add buffer, so that jobs can be queued for the workers
+		wg       sync.WaitGroup
+		parsed   []entity.Vulnerability
+		jobs     = make(chan string)
+		vulnChan = make(chan entity.Vulnerability)
 	)
 
 	// Start worker pool
@@ -71,29 +71,10 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 					continue
 				}
 
-				// Add to shared slice
-				// TODO - streamline vulns bundling with a channel and a budler
-				// to avoid blocking
-				mu.Lock()
-				parsed = append(parsed, vulns...)
-				mu.Unlock()
-				//  []vulns ->
-				//  []vulns -> []vulns ->
-				//  []vulns ->
-				//  []vulns -> 				\
-				//  []vulns -> []vulns ->   - DB
-				//  []vulns -> 				/
-				//  []vulns ->
-				//  []vulns -> []vulns ->
-				//  []vulns ->
-
-				// here is what we are trying to do at this point:
-
-				//  [-----]vulns ->
-				//  [-]vulns -> 	 ->ch -> (bundlers workers) []vulns ->
-				//  [-]vulns ->
-
-				// Idea 1: if we know size of the bundle, we can write to array elements safely by index
+				// Send to channel
+				for _, vuln := range vulns {
+					vulnChan <- vuln
+				}
 			}
 		}(i + 1)
 	}
@@ -102,7 +83,20 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 	for _, file := range req.Files {
 		jobs <- file
 	}
+
+	// Close jobs channel, so workers know to stop
 	close(jobs)
+
+	// TODO that needs to start in a separate goroutine
+	{
+		// Move vulns from vulnChan to
+		for vuln := range vulnChan {
+			parsed = append(parsed, vuln)
+		}
+
+		// Close vulnChan
+		close(vulnChan)
+	}
 
 	// Wait for all workers to finish
 	wg.Wait()
