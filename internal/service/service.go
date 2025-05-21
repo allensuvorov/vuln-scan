@@ -87,19 +87,16 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 	// Close jobs channel, so workers know to stop
 	close(jobs)
 
-	// TODO that needs to start in a separate goroutine
-	{
-		// Move vulns from vulnChan to
-		for vuln := range vulnChan {
-			parsed = append(parsed, vuln)
-		}
-
-		// Close vulnChan
-		close(vulnChan)
+	// Move vulns from vulnChan to
+	for vuln := range vulnChan {
+		parsed = append(parsed, vuln)
 	}
 
-	// Wait for all workers to finish
-	wg.Wait()
+	// In a separate goroutine wait for all workers to finish and close vulnChan
+	go func() {
+		wg.Wait()
+		close(vulnChan)
+	}()
 
 	// Batch write to DB
 	if err := s.storage.SaveVulnerabilities(ctx, parsed); err != nil {
