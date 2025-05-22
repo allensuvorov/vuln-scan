@@ -109,14 +109,6 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 	}
 	log.Printf("Read vulns from vulnChan - end")
 
-	// process: jobs -> worker -> vulns ->
-
-	// go jobs ->
-	// go workerpool ->
-	// go wg.Wait ....
-
-	// vuln reader ->
-
 	// Batch write to DB
 	if err := s.storage.SaveVulnerabilities(ctx, parsed); err != nil {
 		return fmt.Errorf("saving vulnerabilities: %w", err)
