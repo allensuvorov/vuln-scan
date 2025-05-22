@@ -84,6 +84,7 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 	// Send jobs to workers
 	wg.Add(1)
 	go func() {
+		log.Printf("Send files to jobs channel - start")
 		defer wg.Done()
 		for _, file := range req.Files {
 			jobs <- file
@@ -92,6 +93,7 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 
 	// In a separate goroutine wait for all workers to finish and close vulnChan
 	go func() {
+		log.Printf("WaitGroup - Waiting for all gouroutines to finish")
 		wg.Wait()
 		// Close jobs channel, so workers know to stop
 		close(jobs)
@@ -99,9 +101,11 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 	}()
 
 	// Read vulns from vulnChan
+	log.Printf("Read vulns from vulnChan - start")
 	for vuln := range vulnChan {
 		parsed = append(parsed, vuln)
 	}
+	log.Printf("Read vulns from vulnChan - end")
 	// process: jobs -> worker -> vulns ->
 
 	// go jobs ->
