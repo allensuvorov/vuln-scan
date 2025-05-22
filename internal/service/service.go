@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -42,13 +43,14 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 		wg       sync.WaitGroup
 		parsed   []entity.Vulnerability
 		jobs     = make(chan string)
-		vulnChan = make(chan entity.Vulnerability)
+		vulnChan = make(chan entity.Vulnerability, 3)
 	)
 
 	// Start worker pool
 	for i := 0; i < workerCount; i++ {
 		wg.Add(1)
 		go func(workerID int) {
+			log.Printf("Worker %v - start", workerID)
 			defer wg.Done()
 			for file := range jobs {
 				// Fetch
@@ -80,23 +82,33 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 	}
 
 	// Send jobs to workers
-	for _, file := range req.Files {
-		jobs <- file
-	}
-
-	// Close jobs channel, so workers know to stop
-	close(jobs)
-
-	// Move vulns from vulnChan to
-	for vuln := range vulnChan {
-		parsed = append(parsed, vuln)
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for _, file := range req.Files {
+			jobs <- file
+		}
+	}()
 
 	// In a separate goroutine wait for all workers to finish and close vulnChan
 	go func() {
 		wg.Wait()
+		// Close jobs channel, so workers know to stop
+		close(jobs)
 		close(vulnChan)
 	}()
+
+	// Read vulns from vulnChan
+	for vuln := range vulnChan {
+		parsed = append(parsed, vuln)
+	}
+	// process: jobs -> worker -> vulns ->
+
+	// go jobs ->
+	// go workerpool ->
+	// go wg.Wait ....
+
+	// vuln reader ->
 
 	// Batch write to DB
 	if err := s.storage.SaveVulnerabilities(ctx, parsed); err != nil {
