@@ -89,7 +89,7 @@ func (s *Service) Scan(ctx context.Context, req entity.ScanRequest) error {
 			jobs <- file
 		}
 
-		// Close jobs channel, so workers know to stop
+		// Close jobs channel, so workers know to stop when jobs channel is empty
 		close(jobs)
 		log.Printf("Send files to jobs channel - end")
 	}()
